@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yakakrasa"
+version = "0.0.1"
+authors = [
+  { name="Yaka Krasa", email="neclcompany@gmail.com" },
+]
+description = "A lightweight, open-source framework for building chatbots and other conversational AI applications in Python."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch",
+    "numpy",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/adjacentai/yakakrasa"
+"Bug Tracker" = "https://github.com/adjacentai/yakakrasa/issues"
+
+[project.scripts]
+yakakrasa = "cli.main:main"
+
+[project.optional-dependencies]
+cli = ["click"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
