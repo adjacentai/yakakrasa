@@ -7,8 +7,23 @@ from click.testing import CliRunner
 
 from yakakrasa.cli.main import main
 
-def test_cli_train_and_predict():
-    """Test the full CLI workflow: train a model, then predict with it."""
+# Sample config for testing
+CONFIG_YAML = """
+language: "en"
+pipeline:
+  - name: "Tokenizer"
+  - name: "Featurizer"
+  - name: "IntentClassifier"
+    model:
+      hidden_size: 10
+    trainer:
+      epochs: 5
+      batch_size: 2
+      learning_rate: 0.1
+"""
+
+def test_cli_train_and_predict_with_config():
+    """Test the full CLI workflow using a config file."""
     runner = CliRunner()
     
     # Create temporary training data
@@ -20,24 +35,28 @@ def test_cli_train_and_predict():
     ]
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Write training data
+        # Write training data and config
         data_file = Path(temp_dir) / "train.json"
+        config_file = Path(temp_dir) / "config.yml"
+        
         with open(data_file, 'w') as f:
             json.dump(train_data, f)
-        
+        with open(config_file, 'w') as f:
+            f.write(CONFIG_YAML)
+            
         # Model path
         model_file = Path(temp_dir) / "model.pt"
         
         # Test training
         result = runner.invoke(main, [
             'train', 
+            '--config', str(config_file),
             '--data', str(data_file),
-            '--model-path', str(model_file),
-            '--epochs', '5'  # Quick training for test
+            '--model-path', str(model_file)
         ])
         
-        assert result.exit_code == 0
-        assert "Training YakaKrasa model" in result.output
+        assert result.exit_code == 0, result.output
+        assert "Training YakaKrasa model with config" in result.output
         assert "Model saved" in result.output
         assert model_file.exists()
         
@@ -48,8 +67,8 @@ def test_cli_train_and_predict():
             'hello world'
         ])
         
-        assert result.exit_code == 0
-        assert "Intent:" in result.output
+        assert result.exit_code == 0, result.output
+        assert "Intent: greet" in result.output
         assert "confidence:" in result.output
 
 def test_cli_predict_missing_model():

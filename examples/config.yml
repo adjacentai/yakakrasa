@@ -1,0 +1,23 @@
+# YakaKrasa NLU Configuration
+# This file defines the NLU pipeline and its components.
+
+language: "en"
+
+pipeline:
+  - name: "Tokenizer"
+    # No parameters needed for our simple tokenizer yet
+  
+  - name: "Featurizer"
+    # Parameters for the featurizer can be added here
+    # For example:
+    # min_df: 5
+    # max_features: 10000
+
+  - name: "IntentClassifier"
+    # Parameters for the model and training
+    model:
+      hidden_size: 64
+    trainer:
+      epochs: 50
+      batch_size: 8
+      learning_rate: 0.01

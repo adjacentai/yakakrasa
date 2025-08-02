@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "torch",
     "numpy",
+    "PyYAML",
 ]
 
 [project.urls]
