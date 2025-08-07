@@ -5,6 +5,7 @@ from yakakrasa.core.nlu.pipeline import Pipeline
 from yakakrasa.core.nlu.tokenizer import Tokenizer
 from yakakrasa.core.nlu.featurizer import Featurizer
 from yakakrasa.core.nlu.intent_classifier import IntentClassifier
+from yakakrasa.core.nlu.entity_extractor import EntityExtractor
 from yakakrasa.core.models.intent_classifier import IntentClassifier as IntentClassifierModel
 
 # Registry of all available components
@@ -12,6 +13,7 @@ component_classes = {
     "Tokenizer": Tokenizer,
     "Featurizer": Featurizer,
     "IntentClassifier": IntentClassifier,
+    "EntityExtractor": EntityExtractor,
 }
 
 def load_config(config_path: Text) -> Dict[Text, Any]:

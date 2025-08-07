@@ -7,6 +7,10 @@ pipeline:
   - name: "Tokenizer"
     # No parameters needed for our simple tokenizer yet
   
+  - name: "EntityExtractor"
+    # Rule-based entity extraction
+    # Can be customized with custom patterns
+  
   - name: "Featurizer"
     # Parameters for the featurizer can be added here
     # For example:

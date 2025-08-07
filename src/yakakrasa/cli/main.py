@@ -121,6 +121,14 @@ def predict(model_path, text):
     
     click.echo(f"🎯 Text: '{text}'")
     click.echo(f"📊 Intent: {intent['name']} (confidence: {intent['confidence']:.3f})")
+    
+    # Show entities if any were extracted
+    if 'entities' in result and result['entities']:
+        click.echo("🏷️  Entities:")
+        for entity in result['entities']:
+            click.echo(f"   • {entity.entity_type}: '{entity.text}' (pos: {entity.start}-{entity.end})")
+    else:
+        click.echo("🏷️  No entities found")
 
 @main.command()
 @click.option('--model-path', '-m', default='./model.pt', help='Path to trained model')
@@ -159,7 +167,16 @@ def demo(model_path):
             
             result = pipeline.process(text)
             intent = result['intent']
-            click.echo(f"➡️  Intent: {intent['name']} (confidence: {intent['confidence']:.3f})\n")
+            click.echo(f"➡️  Intent: {intent['name']} (confidence: {intent['confidence']:.3f})")
+            
+            # Show entities
+            if 'entities' in result and result['entities']:
+                click.echo("🏷️  Entities:")
+                for entity in result['entities']:
+                    click.echo(f"   • {entity.entity_type}: '{entity.text}'")
+            else:
+                click.echo("🏷️  No entities found")
+            click.echo()
             
         except (KeyboardInterrupt, EOFError):
             break

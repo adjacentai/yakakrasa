@@ -4,6 +4,7 @@ from yakakrasa.core.nlu.pipeline import Pipeline
 from yakakrasa.core.nlu.tokenizer import Tokenizer, Token
 from yakakrasa.core.nlu.featurizer import Featurizer
 from yakakrasa.core.nlu.intent_classifier import IntentClassifier
+from yakakrasa.core.nlu.entity_extractor import EntityExtractor
 from yakakrasa.core.models.intent_classifier import IntentClassifier as IntentClassifierModel
 import numpy as np
 
@@ -90,3 +91,56 @@ def test_intent_classifier():
     assert "confidence" in result["intent"]
     assert result["intent"]["name"] in ["greet", "farewell"]
     assert result["intent"]["confidence"] > 0 
+
+def test_entity_extractor():
+    """Test entity extraction functionality."""
+    extractor = EntityExtractor()
+    text = "Забронируй столик на 8 вечера завтра"
+    message = {"text": text}
+    
+    extractor.process(message)
+    entities = message["entities"]
+    
+    assert len(entities) >= 2  # Should find time and date
+    time_entities = [e for e in entities if e.entity_type == "time"]
+    date_entities = [e for e in entities if e.entity_type == "date"]
+    
+    assert len(time_entities) > 0
+    assert len(date_entities) > 0
+    assert "8 вечера" in [e.text for e in time_entities]
+    assert "завтра" in [e.text for e in date_entities]
+
+def test_pipeline_with_entities():
+    """Test full pipeline including entity extraction."""
+    # First, prepare some training data to fit the featurizer
+    training_texts = ["позвони мне", "напомни завтра"]
+    tokenizer = Tokenizer()
+    training_tokens = []
+    for text in training_texts:
+        msg = {"text": text}
+        tokenizer.process(msg)
+        training_tokens.append(msg["tokens"])
+    
+    # Create and fit featurizer
+    featurizer = Featurizer()
+    featurizer.fit(training_tokens)
+    
+    # Now create the full pipeline
+    pipeline = Pipeline(components=[
+        Tokenizer(),
+        EntityExtractor(),
+        featurizer
+    ])
+    
+    text = "Позвони мне в 3 часа дня"
+    result = pipeline.process(text)
+    
+    assert "tokens" in result
+    assert "entities" in result
+    assert "features" in result
+    
+    # Check that entities were extracted
+    entities = result["entities"]
+    number_entities = [e for e in entities if e.entity_type == "number"]
+    assert len(number_entities) > 0
+    assert "3" in [e.text for e in number_entities] 
