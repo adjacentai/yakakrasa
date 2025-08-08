@@ -6,6 +6,9 @@ from pathlib import Path
 from yakakrasa.core.config import load_config, create_pipeline_from_config
 from yakakrasa.core.train.trainer import Trainer
 from yakakrasa.core.models.intent_classifier import IntentClassifier as IntentClassifierModel
+from yakakrasa.core.nlu.tokenizer import Tokenizer
+from yakakrasa.core.nlu.featurizer import Featurizer
+from yakakrasa.core.utils.metrics import compute_intent_accuracy, compute_entity_pr
 
 @click.group()
 def main():
@@ -182,6 +185,71 @@ def demo(model_path):
             break
     
     click.echo("👋 Goodbye!")
+
+@main.command()
+@click.option('--model-path', '-m', required=True, help='Path to trained model')
+@click.option('--data', '-d', required=True, help='Path to evaluation data (JSON file)')
+def evaluate(model_path, data):
+    """Evaluate a trained model on a labeled dataset."""
+    if not Path(model_path).exists():
+        click.echo(f"❌ Model not found at {model_path}")
+        return
+    if not Path(data).exists():
+        click.echo(f"❌ Data not found at {data}")
+        return
+
+    # Load
+    model_data = torch.load(model_path)
+    config = model_data['config']
+    with open(data, 'r') as f:
+        eval_examples = json.load(f)
+
+    # Rebuild model and pipeline
+    intent_classifier_config = next(c for c in config['pipeline'] if c['name'] == 'IntentClassifier')
+    model = IntentClassifierModel(
+        input_size=len(model_data['vocab']),
+        hidden_size=intent_classifier_config['model']['hidden_size'],
+        output_size=len(model_data['intent_map'])
+    )
+    model.load_state_dict(model_data['model_state_dict'])
+
+    pipeline = create_pipeline_from_config(config, model=model, intent_map=model_data['intent_map'])
+    # Inject featurizer vocab
+    for component in pipeline.components:
+        if hasattr(component, 'vocab'):
+            component.vocab = model_data['vocab']
+            component.vocab_size = len(model_data['vocab'])
+
+    # Evaluate
+    true_intents = []
+    pred_intents = []
+    true_entities = []
+    pred_entities = []
+
+    for ex in eval_examples:
+        text = ex['text']
+        gold_intent = ex.get('intent')
+        gold_entities = ex.get('entities', [])
+
+        result = pipeline.process(text)
+        pred_intent = result.get('intent', {}).get('name')
+
+        true_intents.append(gold_intent)
+        pred_intents.append(pred_intent)
+
+        # Normalize predicted entities for metric function
+        preds = []
+        for ent in result.get('entities', []) or []:
+            preds.append({'text': getattr(ent, 'text', ''), 'entity': getattr(ent, 'entity_type', None)})
+        true_entities.append(gold_entities)
+        pred_entities.append(preds)
+
+    acc = compute_intent_accuracy(true_intents, pred_intents)
+    p, r, f1 = compute_entity_pr(true_entities, pred_entities)
+
+    click.echo("📈 Evaluation results:")
+    click.echo(f"   • Intent accuracy: {acc:.3f}")
+    click.echo(f"   • Entities: P={p:.3f} R={r:.3f} F1={f1:.3f}")
 
 if __name__ == '__main__':
     main()
