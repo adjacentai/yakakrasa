@@ -144,3 +144,21 @@ def test_pipeline_with_entities():
     number_entities = [e for e in entities if e.entity_type == "number"]
     assert len(number_entities) > 0
     assert "3" in [e.text for e in number_entities] 
+
+def test_data_validation():
+    """Test data validation functionality."""
+    from yakakrasa.core.utils.common import validate_training_data
+    
+    # Test empty data
+    is_valid, errors = validate_training_data([])
+    assert not is_valid
+    assert "Training data is empty" in errors
+    
+    # Test valid data
+    valid_data = [
+        {"text": "hello", "intent": "greet"},
+        {"text": "goodbye", "intent": "farewell"}
+    ]
+    is_valid, errors = validate_training_data(valid_data)
+    assert is_valid
+    assert len(errors) == 0 

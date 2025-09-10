@@ -9,6 +9,7 @@ from yakakrasa.core.models.intent_classifier import IntentClassifier as IntentCl
 from yakakrasa.core.nlu.tokenizer import Tokenizer
 from yakakrasa.core.nlu.featurizer import Featurizer
 from yakakrasa.core.utils.metrics import compute_intent_accuracy, compute_entity_pr
+from yakakrasa.core.utils.common import validate_training_data
 
 @click.group()
 def main():
@@ -29,6 +30,15 @@ def train(config, data, model_path):
     config_data = load_config(config)
     with open(data, 'r') as f:
         train_examples = json.load(f)
+    
+    is_valid, errors = validate_training_data(train_examples)
+    if not is_valid:
+        click.echo("❌ Data validation failed:")
+        for error in errors:
+            click.echo(f"   • {error}")
+        return
+
+    click.echo("✅ Data validation passed")
     
     # Extract intents and build mappings
     intents = list(set(example['intent'] for example in train_examples))
